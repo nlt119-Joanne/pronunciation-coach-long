@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>英語口說教練</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#1d2433;--sub:#6b7386;--pri:#4f46e5;--ok:#16a34a;--bad:#dc2626;--bd:#e3e6ef;--hl:#fef3c7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10131c;--card:#1a1f2e;--tx:#eef0f6;--sub:#9aa2b8;--pri:#818cf8;--bd:#2a3145;--hl:#4a3b10}}
+:root[data-theme="dark"]{--bg:#10131c;--card:#1a1f2e;--tx:#eef0f6;--sub:#9aa2b8;--pri:#818cf8;--bd:#2a3145;--hl:#4a3b10}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;line-height:1.5}
+main{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0 12px}
+button,select{font-family:inherit}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tabs button{flex:1;padding:10px 4px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;font-size:15px}
+.tabs button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:18px;margin-bottom:12px}
+.prog{font-size:13px;color:var(--sub);display:flex;justify-content:space-between}
+.en{font-size:26px;font-weight:600;line-height:1.4;margin:12px 0 4px}
+.en b{color:var(--pri);background:var(--hl);border-radius:6px;padding:0 4px;font-size:1.08em}
+.zh{color:var(--sub);font-size:15px}
+.tip{margin-top:12px;padding:10px 12px;background:var(--bg);border-radius:10px;font-size:14px}
+.arrow{display:inline-block;font-size:22px;color:var(--pri);margin-left:6px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.row button{flex:1 1 45%;padding:13px 8px;font-size:15px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--tx)}
+.row .p{background:var(--pri);color:#fff;border-color:var(--pri)}
+.row .rec{background:var(--bad);color:#fff;border-color:var(--bad)}
+.row .dn{background:var(--ok);color:#fff;border-color:var(--ok)}
+.speed{display:flex;gap:6px;align-items:center;margin-top:12px;font-size:14px;color:var(--sub)}
+.speed button{padding:6px 12px;border-radius:99px;border:1px solid var(--bd);background:var(--card);color:var(--tx)}
+.speed button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.res{margin-top:12px;font-size:16px}
+.ok{color:var(--ok);font-weight:600}.no{color:var(--bad);text-decoration:underline wavy}
+.nav{display:flex;gap:8px;margin-bottom:10px}
+.nav button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:15px}
+select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:15px}
+audio{width:100%;margin-top:10px}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:15px}td,th{padding:6px;border-bottom:1px solid var(--bd);text-align:center}
+small{color:var(--sub);display:block;margin-top:10px;font-size:12px}
+</style>
+</head>
+<body>
+<main>
+<h1>🎙️ 英語口說教練</h1>
+<div class="tabs" id="lvs"></div>
+<div class="tabs" id="tabs"></div>
+<div class="card">
+  <div class="prog"><span id="cat"></span><span id="pos"></span></div>
+  <div class="en" id="en"></div>
+  <div class="zh" id="zh"></div>
+  <div class="tip" id="tip"></div>
+  <div class="speed">語速：<button data-r="0.6">慢</button><button data-r="0.85" class="on">中</button><button data-r="1">正常</button></div>
+  <div class="row">
+    <button class="p" id="listen">🔊 聽標準發音</button>
+    <button id="record">⏺ 錄音比較</button>
+    <button id="score">🎯 語音評分</button>
+    <button id="done">☆ 標記熟練</button>
+    <button id="board" style="flex-basis:100%">📊 計分（查看總成績）</button>
+  </div>
+  <audio id="aud" controls hidden></audio>
+  <div class="res" id="res"></div>
+</div>
+<div class="card" id="panel" hidden></div>
+<div class="nav"><button id="prev">← 上一句</button><button id="rand">🔀 隨機</button><button id="next">下一句 →</button></div>
+<select id="jump"></select>
+<small>使用方式：先聽 → 跟著唸 → 錄音回放與原音比較。色塊標示的是重音，要唸得更重更長；箭頭表示句尾語調。語音評分需瀏覽器支援語音辨識（Chrome / Safari），首次使用請允許麥克風。進度會自動儲存在這支手機上。</small>
+</main>
+<script>
+const plain=t=>t.replace(/\*/g,"");
+const html=t=>t.replace(/\*(.+?)\*/g,"<b>$1</b>");
+const nuc=s=>s.replace(/(\w+)([?.!]*)$/,"*$1*$2");
+
+function build(){
+  /* ---------- 發音：50 組對比字 × 2 ---------- */
+  const G=[
+   ["/ɪ/ 短而放鬆 vs /iː/ 嘴角拉開拉長","ship sheep 船 羊;bit beat 一點 打敗;live leave 居住 離開;sit seat 坐 座位"],
+   ["/æ/ 嘴張大 vs /e/ 嘴張小","bad bed 壞的 床;pan pen 平底鍋 筆;bat bet 球棒 打賭"],
+   ["/ʌ/ 短促 vs /ɒ/ 嘴圓張開","cup cop 杯子 警察;hut hot 小屋 熱的;luck lock 運氣 鎖"],
+   ["/ʊ/ 短而放鬆 vs /uː/ 嘴唇圓突拉長","full fool 滿的 傻瓜;pull pool 拉 游泳池"],
+   ["l 舌尖頂上顎 vs r 舌頭捲起但不碰上顎","light right 燈 右邊;lock rock 鎖 岩石;long wrong 長的 錯的;glass grass 玻璃杯 草;collect correct 收集 更正;lice rice 蝨子 米飯;alive arrive 活著 到達"],
+   ["th 舌尖夾在牙間吹氣 vs s 舌尖在牙後","think sink 思考 下沉;thank sank 謝謝 沉了;mouth mouse 嘴巴 老鼠;path pass 小路 通過"],
+   ["th /ð/ 舌尖夾在牙間 vs d 舌尖頂牙齦","then den 然後 巢穴;they day 他們 白天"],
+   ["v 上齒咬下唇 vs w 嘴唇圓起","vest west 背心 西方;vine wine 藤蔓 葡萄酒;verse worse 詩句 更糟;vet wet 獸醫 濕的"],
+   ["v 上齒咬下唇 vs b 雙唇爆破","very berry 非常 莓果;vote boat 投票 船;van ban 廂型車 禁令"],
+   ["s 嘴角拉開 vs sh 嘴唇微圓突出","sea she 海 她;save shave 儲存 刮鬍子;sore shore 痠痛 海岸;sign shine 標誌 閃耀"],
+   ["ch 爆破帶氣 vs sh 持續氣流","chair share 椅子 分享;watch wash 手錶 清洗;catch cash 抓住 現金;chop shop 砍 商店"],
+   ["ch 不震動聲帶 vs j 震動聲帶","choke joke 噎住 笑話;cheap jeep 便宜 吉普車;batch badge 一批 徽章"],
+   ["n 舌尖頂上顎 vs ng 舌根頂軟顎","sin sing 罪 唱歌;ran rang 跑了 響了;thin thing 瘦的 東西;win wing 贏 翅膀"],
+   ["字尾 b/d/g 要有聲音，p/t/k 只收住不爆","cab cap 計程車 帽子;bag back 袋子 背後;card cart 卡片 推車"],
+   ["/ɪ/ 嘴放鬆 vs /e/ 嘴稍開","pick peck 挑選 啄;big beg 大的 乞求;pit pet 坑洞 寵物"],
+   ["f 上齒咬下唇吹氣 vs p 雙唇爆破","fast past 快的 過去;fine pine 很好 松樹;fork pork 叉子 豬肉"],
+   ["z 聲帶震動 vs s 聲帶不震動","peace peas 和平 豌豆;price prize 價格 獎品;bus buzz 公車 嗡嗡聲;ice eyes 冰塊 眼睛"],
+   ["/æ/ 嘴張大 vs /ʌ/ 嘴張小而短","bag bug 袋子 蟲;match much 火柴 很多;ankle uncle 腳踝 叔叔;cat cut 貓 切"],
+   ["/ɑː/ 嘴張大拉長 vs /æ/ 短促","heart hat 心臟 帽子;park pack 公園 包裹;hard had 困難的 有(過去式)"],
+   ["/eɪ/ 滑音 vs /e/ 單音","late let 遲到 讓;tale tell 故事 告訴;main men 主要的 男人們;age edge 年齡 邊緣;sale sell 特價 賣"],
+   ["/əʊ/ 嘴形變圓 vs /ɒ/ 或 /ɔː/","coat caught 外套 抓到了;note not 筆記 不;bowl ball 碗 球;low law 低的 法律"],
+   ["/aɪ/ vs /eɪ/ 注意起始嘴形","lie lay 說謊 放置;bike bake 腳踏車 烘焙;high hay 高的 乾草;buy bay 買 海灣;pie pay 派 付錢"],
+   ["p 不震動帶氣 vs b 震動","pear bear 梨子 熊;pin bin 別針 垃圾桶;pride bride 驕傲 新娘;pour bore 倒 使無聊"],
+   ["t 帶氣不震動 vs d 震動","tie die 領帶 死;town down 城鎮 向下;time dime 時間 十分硬幣;tip dip 小費 蘸"],
+   ["k 帶氣不震動 vs g 震動","cold gold 冷的 黃金;came game 來了 遊戲;crew grew 船員 成長;clue glue 線索 膠水"],
+   ["h 要輕輕送氣，不要漏掉","hair air 頭髮 空氣;heat eat 熱 吃;hold old 握住 老的"],
+   ["m 雙唇閉合 vs n 舌尖頂上顎","mine nine 我的 九;met net 遇見 網子;might night 可能 夜晚;map nap 地圖 午睡"]
+  ];
+  const sound=[];let n=0;const SJ=[["I","我"],["She","她"],["They","他們"],["He","他"],["We","我們"],["You","你"],["My friend","我的朋友"]];
+  G.forEach(([t,s])=>s.split(";").forEach(p=>{
+    const [a,b,x,y]=p.split(" "),q=SJ[n%7],e=n++%2===0,u=e?a:b,w=e?b:a,uz=e?x:y,wz=e?y:x,tt="對比練習："+t;
+    sound.push([`${q[0]} said "*${a}*" and then "*${b}*" very slowly, but the others still could not hear any difference, so everybody tried again.`,`${q[1]}把「${x}」和「${y}」說得很慢，但其他人還是聽不出差別，所以大家又試了一次。`,tt,""]);
+    sound.push([`${q[0]} meant "*${u}*" and not "*${w}*", but the listener misunderstood the word, so the whole conversation had to start over.`,`${q[1]}指的是「${uz}」而不是「${wz}」，但聽的人誤解了這個字，所以整段對話必須重來。`,tt,""]);
+    sound.push([`Is it "*${a}*" or "*${b}*" that you want to practice first, because both words sound similar, yet each one has a different meaning?`,`你想先練習「${x}」還是「${y}」，因為這兩個字聽起來很像，但各自的意思不同？`,"選擇問句：第一項上揚，第二項下降。"+t,"↗ ↗ ↘"]);
+    sound.push([`Please say "*${a}*" and then "*${b}*", pause between them, and listen carefully, because the vowel and consonant sounds are not exactly the same.`,`請先說「${x}」再說「${y}」，兩個字之間停一下並仔細聽，因為母音和子音的發音並不完全相同。`,tt,""]);
+    sound.push([`${q[0]} said "*${w}*" three times in a row, but the teacher smiled and explained that it should be "*${u}*" instead.`,`${q[1]}連續說了三次「${wz}」，但老師微笑著解釋說應該是「${uz}」才對。`,tt,""]);
+  }));
+
+  /* ---------- 語調：100 句 ---------- */
+  const VP=("like coffee|喜歡咖啡;need help|需要幫忙;live here|住在這裡;speak English|說英文;play tennis|打網球;drive to work|開車上班;love music|愛音樂;want some water|想喝水;know him|認識他;watch movies|看電影;"+
+   "study every day|每天讀書;cook dinner|煮晚餐;walk to school|走路上學;read books|看書;work here|在這裡工作;eat breakfast|吃早餐;take the bus|搭公車;enjoy travel|喜歡旅行;have a car|有車;use this app|用這個 App;"+
+   "sing in the shower|在浴室唱歌;wake up early|早起;hate Mondays|討厭星期一;miss home|想家;believe him|相信他;remember names|記得名字;visit relatives|拜訪親戚;buy fruit|買水果;wear glasses|戴眼鏡;feel tired|覺得累;make breakfast|做早餐;take photos|拍照;ride a bike|騎腳踏車;learn Chinese|學中文;call home|打電話回家;drink tea|喝茶;write letters|寫信;play games|玩遊戲;go shopping|去逛街;stay up late|熬夜;need more time|需要更多時間;want to leave|想離開;play the piano|彈鋼琴;like fish|喜歡吃魚;understand this|了解這個;trust doctors|相信醫生;love this job|愛這份工作;like our boss|喜歡我們的老闆;keep a diary|寫日記;make mistakes|犯錯;pay by card|用卡付款;take medicine|吃藥;ride the train|搭火車;ask questions|問問題;share a room|合住一間房;run every morning|每天早上跑步;clean the kitchen|打掃廚房;check the news|看新聞;walk the dog|遛狗;tell the truth|說實話;take a nap|午睡;do homework|寫作業;join the club|加入社團;save money|存錢;miss the bus|錯過公車;take a shower|洗澡;brush twice a day|一天刷兩次牙;meet new people|認識新朋友;feel nervous|覺得緊張;say thank you|說謝謝").split(";").map(x=>x.split("|"));
+  const into=[];
+  const SB=[["you","你","do"],["we","我們","do"],["they","他們","do"],["he","他","does"],["she","她","does"]];
+  const ST=[["I","我","do"],["You","你","do"],["We","我們","do"],["They","他們","do"]];
+  const SN=[["I","我","do"],["You","你","do"],["We","我們","do"],["They","他們","do"],["He","他","does"],["She","她","does"]];
+  const Q=a=>a==="do"?"Do":"Does",N=a=>a==="do"?"don't":"doesn't";
+  VP.forEach(([e,z],j)=>{const [s,sz,a]=SB[j%5];into.push([nuc(`${Q(a)} ${s} ${e}?`),`${sz}${z}嗎？`,"Yes/No 問句：句尾語調上揚。","↗"])});
+  VP.forEach(([e,z],j)=>{const [s,sz]=ST[(j+1)%4];into.push([nuc(`${s} ${e}.`),`${sz}${z}。`,"陳述句：句尾語調下降，聽起來肯定。","↘"])});
+  VP.forEach(([e,z],j)=>{const [s,sz,a]=SB[(j+2)%5];into.push([nuc(`Why ${a} ${s} ${e}?`),`${sz}為什麼${z}？`,"疑問詞問句（Wh-）：語調往下降。","↘"])});
+  VP.forEach(([e,z],j)=>{const [s,sz,a]=ST[(j+3)%4];into.push([`${s} ${e}, ${N(a)} ${s==="I"?"I":s.toLowerCase()}?`,`${sz}${z}，對吧？`,"附加問句（確認用）：don't 語調上揚。","↗"])});
+  VP.forEach(([e,z],j)=>{const [s,sz,a]=SN[(j+4)%6];into.push([nuc(`${s} ${N(a)} ${e}.`),`${sz}${z.startsWith("有")?"沒有"+z.slice(1):"不"+z}。`,"否定句：don't / doesn't 要清楚，句尾語調下降。","↘"])});
+  VP.forEach(([e,z],j)=>{const [s,sz,a]=SB[(j+1)%5];into.push([nuc(`How often ${a} ${s} ${e}?`),`${sz}多常${z}？`,"疑問詞問句：重音在 often，句尾語調下降。","↘"])});
+  VP.forEach(([e,z],j)=>{const [s,sz,a]=SB[(j+3)%5];into.push([nuc(`${Q(a)} ${s} *really* ${e}?`),`${sz}真的${z}嗎？`,"表示驚訝的確認：really 加重，句尾上揚。","↗"])});
+  "tea coffee juice 茶 咖啡 果汁;rice noodles soup 米飯 麵條 湯;red blue green 紅色 藍色 綠色;pens pencils markers 原子筆 鉛筆 麥克筆;trains buses taxis 火車 公車 計程車;apples bananas grapes 蘋果 香蕉 葡萄;Monday Tuesday Friday 星期一 星期二 星期五;cats dogs birds 貓 狗 鳥;milk bread eggs 牛奶 麵包 雞蛋;pizza pasta salad 披薩 義大利麵 沙拉"
+   .split(";").forEach(p=>{const [a,b,c,x,y,z]=p.split(" ");
+    into.push([`Would you like *${a}*, *${b}*, or *${c}*?`,`你想要${x}、${y}還是${z}？`,"列舉選項：前面每項上揚，最後一項下降。","↗ ↗ ↘"])});
+
+  /* ---------- 節奏：100 句 ---------- */
+  const rhythm=[];
+  const SUB=[["I","我"],["We","我們"],["They","他們"],["You","你"],["He","他"],["She","她"]];const c3=v=>v==="try"?"tries":v==="have"?"has":v+"s";
+  const V1=[["want","想"],["need","需要"],["plan","打算"],["try","試著"],["like","喜歡"],["hope","希望"],["forget","忘記"],["have","必須"],["decide","決定"],["prefer","比較喜歡"],["refuse","拒絕"],["promise","答應"],["agree","同意"],["start","開始"]];
+  const PR="buy milk 買 牛奶;read book 讀 書;fix car 修 車;call doctor 打電話給 醫生;clean room 打掃 房間;open window 打開 窗戶;wash dishes 清洗 碗盤;paint wall 粉刷 牆壁;visit museum 參觀 博物館;pack bag 收拾 包包;cook rice 煮 米飯;feed cat 餵 貓;send letter 寄 信;lock door 鎖 門;move table 搬 桌子;bake bread 烤 麵包;water plants 澆 植物;throw trash 丟 垃圾;hang picture 掛 畫;sweep floor 掃 地板".split(";").map(x=>x.split(" "));
+  let k=0;
+  V1.forEach(([v,vz])=>PR.forEach(([a,b,az,bz])=>{const j=k++%6,[s,sz]=SUB[j],vv=j>3?c3(v):v;
+    rhythm.push([`${s} *${vv}* to *${a}* the *${b}*.`,`${sz}${vz}${az}${bz}。`,"重音詞（色塊）唸重唸長；to 弱讀成 /tə/，the 弱讀成 /ðə/，快速帶過。",""])}));
+  const V2=[["call","打電話給"],["text","傳訊息給"],["email","寄信給"],["tell","告訴"],["help","幫"],["remind","提醒"],["ask","問"],["visit","拜訪"],["hug","擁抱"],["pay","付錢給"],["write","寫信給"],["thank","感謝"],["answer","回覆"],["find","找"]];
+  const PL=[["*home*","到家"],["*there*","到那裡"],["*back*","回來"],["to *work*","到公司"],["to the *station*","到車站"],["*here*","到這裡"],["to the *airport*","到機場"],["to the *office*","到辦公室"],["to the *hotel*","到飯店"]];
+  const SR=[["I","I'll","我","you","你","get"],["We","We'll","我們","you","你","get"],["They","They'll","他們","you","你","get"],["He","He'll","他","you","你","gets"],["She","She'll","她","you","你","gets"],["You","You'll","你","me","我","get"]];
+  let m=0;
+  V2.forEach(([v,vz])=>PL.forEach(([p,pz])=>{const [s,ll,sz,o,oz,g]=SR[m++%6];rhythm.push([`${ll} *${v}* ${o} *when* ${s==="I"?"I":s.toLowerCase()} *${g}* ${p}.`,`${sz}${pz}後會${vz}${oz}。`,"代名詞與縮寫（I'll、you、he）都是輕音，快速帶過；只有色塊字要清楚有力。",""])}));
+  [["What are you *doing* *tonight*?","你今晚要做什麼？","What are you 縮成「娃嘟有」，重音在 doing 與 tonight。"],
+   ["I *can't* *believe* it's *already* *Friday*.","真不敢相信已經星期五了。","四個重音要均勻，中間的字快速滑過。"],
+   ["He's *got* a *lot* of *work* to *finish*.","他有很多工作要完成。","a、of、to 都是輕音，幾乎聽不清楚。"],
+   ["*Tell* me *what* you *want* to *do*.","告訴我你想做什麼。","want to 常連成 wanna。"],
+   ["She *wants* to *go* to the *store*.","她想去商店。","to、the 弱讀。"],
+   ["Where are you *going* this *weekend*?","你這個週末要去哪裡？","are you 連成「阿有」，輕輕帶過。"],
+   ["I *don't* *know* what to *say*.","我不知道該說什麼。","what to 連成「襪吐」，輕而快。"],
+   ["Can you *give* me a *hand* with *this*?","你可以幫我一下嗎？","Can you 弱讀成「肯玉」。"],
+   ["It's *time* to *go* to *bed*.","該去睡覺了。","兩個 to 都弱讀成 /tə/。"],
+   ["We *should* *leave* before it *rains*.","我們該在下雨前離開。","before it 連在一起快速帶過。"]
+  ].forEach(([a,b,c])=>rhythm.push([a,b,c,""]));
+
+  const TM=[["*tonight*","今晚"],["*tomorrow*","明天"],["*today*","今天"],["this *weekend*","這個週末"],["on *Friday*","星期五"],["next *week*","下週"],["this *summer*","今年夏天"],["after *work*","下班後"],["this *morning*","今天早上"],["this *afternoon*","今天下午"],["this *month*","這個月"],["on *Sunday*","星期天"]];
+  [["What are you *doing*","要做什麼"],["Where are you *going*","要去哪裡"],["Who are you *meeting*","要見誰"],["How are you *feeling*","感覺如何"],["What are you *wearing*","要穿什麼"],["What are you *cooking*","要煮什麼"],["Who are you *calling*","要打給誰"]]
+   .forEach(([q,zs])=>TM.forEach(([t,tz])=>rhythm.push([`${q} ${t}?`,`你${tz}${zs}？`,"疑問句重音在動詞與時間詞；are you 弱讀連音，輕輕帶過。",""])));
+
+  /* ===== 基礎級改為 15 字以上的複合句 ===== */
+  const TY=[
+   [[", or would you rather do something completely different with your friends this afternoon?","，還是你寧願今天下午和朋友做完全不同的事？"],[", or is it just something that you usually do when you feel bored at home?","，還是那只是你在家覺得無聊時通常會做的事？"],[", or have you changed your mind since we last talked about it with everyone yesterday?","，還是自從昨天我們和大家談過之後你改變主意了？"]],
+   [[", but nobody else in the room seemed to notice it until the meeting was almost over.","，但直到會議快結束時，房間裡似乎沒有其他人注意到。"],[", and that is exactly why everyone keeps asking me about it every single day.","，而這正是為什麼大家每天都一直問我這件事。"],[", although I never planned to tell anyone about it until this morning at breakfast.","，雖然我本來沒打算在今天早餐之前告訴任何人。"]],
+   [[", and what do you think would happen if everyone in the world did the same thing?","，你覺得如果全世界的人都這樣做會發生什麼事？"],[", and has anyone ever explained the real reason to you clearly and honestly?","，有沒有人曾經清楚而誠實地向你解釋真正的原因？"],[", or is there another reason that you have not mentioned to anyone until now?","，還是有另一個你到現在都沒對任何人提過的原因？"]],
+   [[", so why did nobody tell me about it before the meeting started last week?","，那為什麼上週會議開始前沒有人告訴我這件事？"],[", or am I misunderstanding what everyone has been saying about it lately?","，還是我誤解了大家最近對這件事的說法？"]],
+   null,
+   [[", and what usually makes the biggest difference in the end for everyone involved?","，到最後什麼通常對所有相關的人影響最大？"],[", or does it depend entirely on how busy the week becomes for the whole family?","，還是這完全取決於這一週對全家人來說有多忙？"]],
+   [[", or are you only saying that to be polite to everyone who is here today?","，還是你只是為了對今天在場的每個人客氣才這麼說？"],[", or did you change your mind after hearing what all the others said yesterday?","，還是你聽了其他人昨天說的話之後改變了主意？"]]
+  ];
+  TY[4]=TY[1];
+  const TP=["選擇問句：前半（第一個選項）語調上揚，後半下降；色塊是核心重音。","並列句：連接詞前稍停，前半句尾略上揚表示話還沒說完，句尾下降。","疑問詞問句：整體語調偏下降，逗號處稍作停頓。","附加問句：don't you 語調上揚，後半句句尾下降。","否定並列句：don't / doesn't 要清楚，句尾語調下降。","疑問詞問句：重音在 often，逗號處稍停，句尾下降。","驚訝的確認：really 加重，後半句的選擇問句下降。"];
+  const arr=s=>Array((s.match(/,/g)||[]).length).fill("↗").concat("↘").join(" ");
+  const mk=s=>s.replace(/([A-Za-z']+)(,)/g,"*$1*$2").replace(/([A-Za-z']+)([?.])$/,"*$1*$2");
+  into.forEach((x,j)=>{
+    if(j<490){const ty=Math.floor(j/70),P=TY[ty],[te,tz]=P[(j%70+ty)%P.length];x[0]=mk(x[0].slice(0,-1)+te);x[1]=x[1].slice(0,-1)+tz;x[2]=TP[ty]}
+    else{x[0]=mk(x[0].slice(0,-1)+" with your meal tonight, or would you rather wait until everyone has finally arrived?");x[1]=x[1].slice(0,-1)+"配今晚的餐點，還是你寧願等到大家終於到齊再說？";x[2]="長列舉問句：列舉項目逐項上揚，最後一項與句尾下降。"}
+    x[3]=arr(x[0]);
+  });
+  const TL=[[", but the *weather* is *getting* *worse*, so we should *hurry* before it *gets* *dark*","，但天氣越來越糟，所以我們應該在天黑前趕快行動"],[", and everyone *agrees* that it would be *better* to *finish* it before *tomorrow* *morning*","，而且大家都同意最好在明天早上之前完成"],[", yet nobody *remembers* *exactly* *when* the *plan* was *first* *discussed* in the *meeting*","，然而沒有人確切記得這個計畫是什麼時候在會議中第一次討論的"],[", so we *asked* a *few* *friends* to *help* us *whenever* they *have* *time* this *week*","，所以我們請幾位朋友這星期有空時來幫忙"],[", but it *costs* more *money* than we *planned* to *spend* this *month* on *anything* *else*","，但它花的錢比我們這個月計畫花在其他事情上的還多"],[", and then we can *relax* *together* while the *others* *finish* the *rest* of the *work*","，然後我們就可以一起放鬆，讓其他人完成剩下的工作"]];
+  const TQ=[[", and would you *like* to *join* us for *dinner* if you are *free* *afterward*","，如果之後有空，你要不要和我們一起吃晚餐"],[", or should we *call* you *again* when *everything* is *ready* for the *party*","，還是準備好派對後我們再打電話給你"],[", and do you *think* we should *invite* the *others* to *come* *along*","，你覺得我們要不要邀請其他人一起來"]];
+  const HAND=[["I *can't* *believe* it's *already* *Friday*, but I *still* have a *lot* of *work* to *finish* before the *weekend*.","真不敢相信已經星期五了，但週末前我還有很多工作要完成。"],["She *wants* to *go* to the *store*, but the *rain* is *getting* *heavier*, so she *decided* to *wait* a little *longer*.","她想去商店，但雨越下越大，所以她決定再多等一會兒。"],["*Tell* me *what* you *want* to *do*, and I will *try* my *best* to *make* it *happen* before the *end* of the *month*.","告訴我你想做什麼，我會盡全力在這個月底前讓它實現。"],["Where are you *going* this *weekend*, and who is *coming* with you if the *weather* stays *nice* and *warm*?","你這個週末要去哪裡？如果天氣一直又好又暖，誰會跟你一起去？"],["I *don't* *know* what to *say*, but I *promise* that I will *call* you as *soon* as I *understand* *everything*.","我不知道該說什麼，但我保證一旦我完全了解就會打電話給你。"],["Can you *give* me a *hand* with *this*, or should I *ask* someone *else* who has more *experience* with these *machines*?","你可以幫我一下嗎？還是我該問更有這類機器經驗的其他人？"],["It's *time* to *go* to *bed*, but the *kids* are *still* *talking* about the *story* they *heard* at *school* today.","該去睡覺了，但孩子們還在談論今天在學校聽到的故事。"],["We *should* *leave* before it *rains*, because the *road* *gets* *slippery* and the *traffic* is *always* *terrible* after *dark*.","我們該在下雨前離開，因為路面會變滑，而且天黑後交通總是很糟。"],["He's *got* a *lot* of *work* to *finish*, so he *won't* *join* us *tonight*, but he *promised* to *come* next *time*.","他有很多工作要完成，所以今晚不會加入我們，但他答應下次會來。"],["What are you *doing* *tonight*, and would you *like* to *join* us for *dinner* if you are *free* *afterward*?","你今晚要做什麼？如果之後有空，要不要和我們一起吃晚餐？"]];
+  rhythm.forEach((x,j)=>{if(j>=406&&j<416)return;const q=j>=416,[te,tz]=(q?TQ:TL)[j%(q?3:6)];x[0]=x[0].slice(0,-1)+te+(q?"?":".");x[1]=x[1].slice(0,-1)+tz+(q?"？":"。");x[2]+=" 長複合句：and、but、so 前稍作停頓。"});
+  rhythm.splice(406,10,...HAND.map(([a,b])=>[a,b,"長複合句：色塊是重音，其餘輕讀；逗號和連接詞前稍作停頓。",""]));
+
+  return {sound:{n:"發音",items:sound},into:{n:"語調",items:into},rhythm:{n:"節奏",items:rhythm}};
+}
+function adv(L){
+  const hs=L==="hs",X=s=>s.split(";").map(x=>x.split("|")),cap=s=>s[0].toUpperCase()+s.slice(1);
+  const FW=new Set("a an the of to in on at by for with from and or but that which who whom whose where when while although though as is was were be been being had has have did do does it its this these those he she they we you i his her their our my not no than then so if once whenever whereas even after before until into over under about such".split(" "));
+  const pk=(t,Ls)=>{let q=t,p=0;return Ls.map(n=>{const d=((q%n)+p)%n;p=d;q=Math.floor(q/n);return d})};
+  let A,B,A2,B2,C,J,S,R,F,SEQ;
+  if(hs){
+    A=X("the teacher who lives next door|住在隔壁的老師;the student who won the scholarship|得到獎學金的學生;the girl whom everyone admires|大家都欣賞的女孩;the neighbor whose dog barks all night|整晚狗吠的鄰居;the doctor who treated my grandfather|治療過我爺爺的醫生;the athlete who broke the record|打破紀錄的運動員;the writer whose novel became famous|小說聲名大噪的作家;the man who found the wallet|撿到錢包的男人;the engineer who designed the bridge|設計這座橋的工程師;the coach that I respect most|我最尊敬的教練");
+    B=X("was awarded a prize for outstanding courage|因表現傑出的勇氣而獲獎;was invited to give a speech at the ceremony|受邀在典禮上演講;was praised by everyone in the community|受到社區所有人稱讚;decided to move to a quieter city|決定搬到較安靜的城市;was interviewed by a local newspaper|接受當地報紙訪問;organized a charity event to raise money|籌辦慈善活動來募款;surprised the audience with an unexpected announcement|以意外的宣布讓觀眾驚訝;worked hard until the project was completed|努力工作直到計畫完成;never forgot the advice that changed everything|從未忘記那個改變一切的建議;was grateful for the support of friends|感謝朋友們的支持");
+    A2=X("the book that I borrowed yesterday|我昨天借的書;the movie which we watched last night|我們昨晚看的電影;the bridge that connects the two towns|連接兩個城鎮的橋;the museum where we spent the afternoon|我們待了一下午的博物館;the restaurant that opened last month|上個月開幕的餐廳;the app that helps students study|幫助學生讀書的應用程式;the letter that arrived this morning|今天早上寄到的信;the park where children usually play|孩子們常去玩的公園;the machine that sorts the recycling|分類回收物的機器;the festival which attracts thousands of visitors|吸引數千名遊客的節慶");
+    B2=X("was far more expensive than I expected|比我預期的貴得多;turned out to be surprisingly entertaining|結果出乎意料地有趣;had been closed for several years|已經關閉好幾年;became popular among young people|在年輕人之間變得受歡迎;seemed unnecessarily complicated|似乎複雜得沒必要;was recommended by many critics|受到許多評論家推薦;made the whole neighborhood livelier|讓整個社區更有活力;changed the way people communicated|改變了人們溝通的方式;remained unchanged despite the criticism|儘管受到批評仍維持不變;cost more than anyone had imagined|花費超乎所有人想像");
+    C=X("the weather improved|天氣好轉;the committee reviewed the proposal|委員會審查提案;the audience stopped applauding|觀眾停止鼓掌;everyone had left the building|所有人都離開大樓;the project ran out of money|計畫經費用盡;the rain finally stopped|雨終於停止;nobody expected a result|沒人預期到結果;the manager announced the changes|經理宣布改變;the exam results were released|考試成績公布;the train was delayed|火車誤點");
+    J=[["Although","雖然","，"],["Even though","儘管","，"],["After","在","之後，"],["Before","在","之前，"],["Whenever","每當","，"],["While","當","的時候，"],["Once","一旦","，"]];
+    F=[t=>{const [a,b]=pk(t,[10,10]);return [cap(A[a][0])+" "+B[b][0]+".",A[a][1]+B[b][1]+"。"]},
+       t=>{const [a,b]=pk(t,[10,10]);return [cap(A2[a][0])+" "+B2[b][0]+".",A2[a][1]+B2[b][1]+"。"]},
+       t=>{const [j,c,a,b]=pk(t,[7,10,10,10]);return [`${J[j][0]} ${C[c][0]}, ${A[a][0]} ${B[b][0]}.`,`${J[j][1]}${C[c][1]}${J[j][2]}${A[a][1]}${B[b][1]}。`]},
+       t=>{const [j,c,a,b]=pk(t,[7,10,10,10]);return [`${J[j][0]} ${C[c][0]}, ${A2[a][0]} ${B2[b][0]}.`,`${J[j][1]}${C[c][1]}${J[j][2]}${A2[a][1]}${B2[b][1]}。`]}];
+    SEQ=[2,3,2,3,2,3,2,3,2,3,2,0,1,0,1];
+  }else{
+    A=X("the linguist whose theory transformed the discipline|其理論轉變了該學科的語言學家;the critic who dismissed the novel as derivative|斥該小說為模仿之作的評論家;the committee that scrutinized the controversial hypothesis|審慎檢視這項爭議假說的委員會;the philosopher whose arguments undermine conventional assumptions|其論證動搖傳統假設的哲學家;the historian who reconstructed the medieval economy|重建中世紀經濟的歷史學家;the poet whose verses reflect profound ambivalence|詩句反映深刻矛盾情感的詩人;the translator who preserved the original ambiguity|保留原文模糊性的譯者;the scholar whom colleagues consistently overlooked|同事們一再忽視的學者;the playwright whose reputation had steadily declined|聲望持續下滑的劇作家;the anthropologist who challenged prevailing stereotypes|挑戰主流刻板印象的人類學家");
+    B=X("was nevertheless criticized for disregarding historical context|仍因忽視歷史脈絡而受批評;ultimately reconsidered the assumptions underlying the argument|最終重新思考論證背後的假設;articulated a more nuanced interpretation of the text|闡述了對文本更細膩的詮釋;remained skeptical of any unsubstantiated generalization|對任何缺乏根據的概括仍持懷疑;persuaded the skeptics that the evidence was irrefutable|說服懷疑者證據無可反駁;juxtaposed two seemingly incompatible perspectives|並置兩種看似不相容的觀點;had unwittingly reinforced the very bias that was being condemned|無意間強化了正被譴責的偏見本身;emphasized that interpretation is inevitably subjective|強調詮釋無可避免地帶有主觀性;relinquished the position in order to pursue independent research|為了從事獨立研究而放棄職位;dismissed the objection as fundamentally misguided|斥該異議根本是誤導");
+    C=X("the hypothesis failed to withstand scrutiny|該假說經不起檢驗;the data contradicted earlier findings|數據與先前發現相矛盾;the critics acknowledged its originality|評論家承認其原創性;the debate grew increasingly polarized|辯論日趨兩極化;the evidence proved inconclusive|證據不具決定性;public opinion shifted dramatically|輿論劇烈轉變;the manuscript was finally published|手稿終於出版;the funding was abruptly withdrawn|經費被突然撤回;the regime collapsed unexpectedly|政權意外垮台;the findings were widely disseminated|研究結果被廣泛傳播");
+    J=[["Whereas","儘管","，"],["Notwithstanding the fact that","儘管事實上","，"],["Even though","即使","，"],["Once","一旦","，"],["Whenever","每當","，"]];
+    S=X("the linguist|語言學家;the critic|評論家;the philosopher|哲學家;the historian|歷史學家;the translator|譯者;the scholar|學者");
+    R=X("having dismissed the prevailing paradigm as untenable|在斥主流典範站不住腳之後;having scrutinized the available evidence|在仔細檢視現有證據之後;having been repeatedly misrepresented|在一再被曲解之後;having reconciled the apparent contradictions|在調和表面矛盾之後;having reconsidered the underlying assumptions|在重新思考背後假設之後");
+    F=[t=>{const [a,b]=pk(t,[10,10]);return [cap(A[a][0])+" "+B[b][0]+".",A[a][1]+B[b][1]+"。"]},
+       t=>{const [j,c,a,b]=pk(t,[5,10,10,10]);return [`${J[j][0]} ${C[c][0]}, ${A[a][0]} ${B[b][0]}.`,`${J[j][1]}${C[c][1]}${J[j][2]}${A[a][1]}${B[b][1]}。`]},
+       t=>{const [s,r,b]=pk(t,[6,5,10]);return [`${cap(S[s][0])}, ${R[r][0]}, ${B[b][0]}.`,`${R[r][1]}，${S[s][1]}${B[b][1]}。`]},
+       t=>{const [s,b]=pk(t,[6,10]);return [`It was ${S[s][0]} who ${B[b][0]}.`,`正是${S[s][1]}${B[b][1]}。`]},
+       t=>{const [j,c,s,b]=pk(t,[5,10,6,10]);return [`${J[j][0]} ${C[c][0]}, ${S[s][0]} ${B[b][0]}.`,`${J[j][1]}${C[c][1]}${J[j][2]}${S[s][1]}${B[b][1]}。`]}];
+    SEQ=[1,4,1,2,1,4,1,2,1,4,2,4,0,0,3];
+  }
+  const TT=hs?[[", and everyone in the community kept talking about it for the rest of the week","，而且社區裡的每個人整個星期都一直在談論這件事"],[", but not everybody agreed that it was really worth all the time and effort","，但並非每個人都同意這真的值得花這麼多時間和心力"],[", so people kept asking questions about it long after the whole event had ended","，所以在整個活動結束很久之後，人們仍不斷提出相關的問題"]]
+   :[[", although the broader implications remained largely unexplored for several decades afterward","，儘管其更廣泛的影響在之後數十年間大多未被探究"],[", and the resulting controversy continued to shape scholarly discourse well into the following century","，而由此引發的爭議持續形塑學術論述直到下一個世紀"],[", yet few contemporaries fully appreciated its lasting significance at the time","，然而當時鮮少有同代人充分體會其持久的重要性"]];
+  const cn=[0,0,0,0,0],R3={sound:[],into:[],rhythm:[]},ks=["sound","into","rhythm"];
+  for(let g=0;g<750;g++){
+    const f=SEQ[g%15],k=ks[g%3];let [en,zh]=F[f](cn[f]++),e,tip,ar="";
+    if((en.match(/[A-Za-z']+/g)||[]).length<15){const [te,tz]=TT[g%3];en=en.slice(0,-1)+te+".";zh=zh.slice(0,-1)+tz+"。"}
+    if(k==="rhythm"){e=en.replace(/[A-Za-z']+/g,w=>FW.has(w.toLowerCase())?w:"*"+w+"*");tip="長句節奏：每個內容詞（色塊）一個重音，功能詞（the、of、that、who…）輕而快；逗號處稍作停頓。"}
+    else if(k==="into"){e=en.replace(/([A-Za-z']+)([,.])/g,"*$1*$2");ar=Array((en.match(/,/g)||[]).length).fill("↗").concat("↘").join(" ");tip="逗號處語調上揚並停頓，句尾下降；色塊字是各子句的核心重音。"}
+    else{const m=[];e=en.replace(/[A-Za-z']+/g,w=>!FW.has(w.toLowerCase())&&/th|v|sh|tion|sion|ough|ph/i.test(w)?(m.push(w),"*"+w+"*"):w);
+      tip=(m.length?"重點發音："+[...new Set(m.map(w=>w.toLowerCase()))].slice(0,5).join("、")+"。注意 th、v、-tion、-ough 等音，":"")+"先慢速逐字唸，再連成整句。"}
+    R3[k].push([e,zh,tip,ar]);
+  }
+  const nm={sound:"發音",into:"語調",rhythm:"節奏"},o={};
+  ks.forEach(k=>o[L+"_"+k]={n:nm[k],l:hs?"（高中）":"（大學英文系）",items:R3[k]});
+  return o;
+}
+const LV={base:build(),hs:adv("hs"),uni:adv("uni")};let D=LV.base,lv="base";
+let cat="sound",i=0,rate=0.85,rec=null,chunks=[],done={},sc={};
+const $=id=>document.getElementById(id);
+function save(){try{localStorage.setItem("pc4",JSON.stringify({lv,cat,i,done,sc}))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem("pc4")||"null");if(!s)return;if(LV[s.lv]){lv=s.lv;D=LV[lv]}if(D[s.cat]){cat=s.cat;i=Math.min(s.i||0,D[cat].items.length-1)}done=s.done||{};sc=s.sc||{}}catch(e){}}
+function cnt(k){return Object.keys(done).filter(x=>x.startsWith(k)&&done[x]).length}
+function render(){
+  const L=D[cat].items,it=L[i];
+  $("lvs").innerHTML=[["base","基礎複合句"],["hs","高中進階"],["uni","大學英文系"]].map(([k,n])=>`<button class="${k===lv?"on":""}" data-l="${k}">${n}</button>`).join("");
+  $("tabs").innerHTML=Object.keys(D).map(k=>`<button class="${k===cat?"on":""}" data-k="${k}">${D[k].n}</button>`).join("");
+  $("cat").textContent=`${D[cat].n}練習　已熟練 ${cnt(cat)} / ${L.length}`;$("pos").textContent=(i+1)+" / "+L.length;
+  $("en").innerHTML=html(it[0])+(it[3]?`<span class="arrow">${it[3]}</span>`:"");
+  $("zh").textContent=it[1];$("tip").textContent="💡 "+it[2];
+  const d=!!done[cat+i];$("done").textContent=d?"✓ 已熟練":"☆ 標記熟練";$("done").classList.toggle("dn",d);
+  $("jump").innerHTML=L.map((x,n)=>`<option value="${n}" ${n===i?"selected":""}>${done[cat+n]?"✓ ":""}${n+1}. ${plain(x[0]).slice(0,30)}</option>`).join("");
+  $("res").innerHTML="";$("aud").hidden=true;save();
+}
+function speak(){
+  if(!window.speechSynthesis){$("res").textContent="此瀏覽器不支援語音朗讀，請改用 Safari（iPhone）或 Chrome（Android）直接開啟網址。";return}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(plain(D[cat].items[i][0]));
+  u.lang="en-US";u.rate=rate;
+  const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.replace("_","-")==="en-US");if(v)u.voice=v;
+  speechSynthesis.speak(u);
+}
+async function toggleRec(){
+  const b=$("record");
+  if(rec&&rec.state==="recording"){rec.stop();return}
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({audio:true});
+    chunks=[];rec=new MediaRecorder(s);
+    rec.ondataavailable=e=>chunks.push(e.data);
+    rec.onstop=()=>{s.getTracks().forEach(t=>t.stop());
+      const a=$("aud");a.src=URL.createObjectURL(new Blob(chunks,{type:rec.mimeType}));a.hidden=false;
+      b.textContent="⏺ 錄音比較";b.classList.remove("rec");
+      $("res").textContent="錄好了！按播放聽自己的聲音，再按「聽標準發音」比較。"};
+    rec.start();b.textContent="⏹ 停止錄音";b.classList.add("rec");
+  }catch(e){$("res").textContent="無法使用麥克風，請確認已允許權限，並用瀏覽器直接開啟 https 網址。"}
+}
+function score(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){$("res").textContent="此瀏覽器不支援語音辨識，請改用 Chrome 或 Safari，或使用錄音比較。";return}
+  const r=new SR();r.lang="en-US";r.interimResults=false;
+  $("res").textContent="🎧 請開始唸…";
+  r.onresult=e=>{
+    const said=e.results[0][0].transcript.toLowerCase().replace(/[^a-z' ]/g,"").split(/\s+/);
+    const target=plain(D[cat].items[i][0]).split(/\s+/);
+    let hit=0;
+    const out=target.map(w=>{const c=w.toLowerCase().replace(/[^a-z']/g,"");
+      const ok=said.includes(c);if(ok)hit++;return `<span class="${ok?"ok":"no"}">${w}</span>`}).join(" ");
+    const p=Math.round(hit/target.length*100);
+    const o=sc[cat+i]||{b:0,n:0};o.b=Math.max(o.b,p);o.n++;sc[cat+i]=o;save();if(!$("panel").hidden)board();
+    $("res").innerHTML=`${out}<br>分數：<b>${p}</b> / 100（本句最高 ${o.b}）　${p>=90?"太棒了！🎉":p>=60?"不錯，再試一次！":"慢一點，再聽一次標準發音。"}<br><span style="color:var(--sub);font-size:13px">辨識到：${said.join(" ")}</span>`};
+  r.onerror=()=>{$("res").textContent="沒有辨識到聲音，請再試一次並確認麥克風權限。"};
+  r.start();
+}
+$("lvs").onclick=e=>{const k=e.target.dataset.l;if(k){lv=k;D=LV[k];cat=Object.keys(D)[0];i=0;render()}};
+$("tabs").onclick=e=>{const k=e.target.dataset.k;if(k){cat=k;i=0;render()}};
+function board(){
+  const P=$("panel");let T=0,N=0,A=0;
+  let h=`<b>📊 練習成績</b><small style="margin:4px 0 0">每句取「最高分」加總，重複練習只會提高該句分數，不會重複累加。</small><table><tr><th>類別</th><th>已評分</th><th>總分</th><th>平均</th></tr>`;
+  const AL=Object.assign({},LV.base,LV.hs,LV.uni);for(const k in AL){const v=Object.keys(sc).filter(x=>x.startsWith(k));const s=v.reduce((a,x)=>a+sc[x].b,0);A+=v.reduce((a,x)=>a+sc[x].n,0);T+=s;N+=v.length;
+    h+=`<tr><td>${AL[k].n}${AL[k].l||""}</td><td>${v.length}/${AL[k].items.length}</td><td>${s}</td><td>${v.length?Math.round(s/v.length):"-"}</td></tr>`}
+  const av=N?Math.round(T/N):0;
+  h+=`</table><div style="font-size:20px;margin-top:12px">總分：<b>${T}</b> 分</div><div class="zh">已評分 ${N} 句・平均 ${av} 分・累計嘗試 ${A} 次　${av>=90?"🏆 發音達人":av>=75?"🥇 很棒":av>=60?"👍 持續進步":N?"💪 加油":""}</div><div class="row"><button id="rs">🗑 清除成績</button></div>`;
+  P.innerHTML=h;$("rs").onclick=()=>{if(confirm("確定清除所有評分紀錄？")){sc={};save();board()}};
+}
+$("board").onclick=()=>{const P=$("panel");P.hidden=!P.hidden;if(!P.hidden)board()};
+$("listen").onclick=speak;$("record").onclick=toggleRec;$("score").onclick=score;
+$("done").onclick=()=>{done[cat+i]=!done[cat+i];render()};
+$("next").onclick=()=>{i=(i+1)%D[cat].items.length;render()};
+$("prev").onclick=()=>{i=(i-1+D[cat].items.length)%D[cat].items.length;render()};
+$("rand").onclick=()=>{i=Math.floor(Math.random()*D[cat].items.length);render()};
+$("jump").onchange=e=>{i=+e.target.value;render()};
+document.querySelector(".speed").onclick=e=>{const r=e.target.dataset.r;if(!r)return;rate=+r;
+  document.querySelectorAll(".speed button").forEach(b=>b.classList.toggle("on",b.dataset.r===r))};
+load();render();
+</script>
+</body>
+</html>
